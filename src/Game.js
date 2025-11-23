@@ -2,6 +2,7 @@ import Snake from './entities/Snake.js';
 import Food from './entities/Food.js';
 import InputHandler from './utils/InputHandler.js';
 import Renderer from './utils/Renderer.js';
+import SoundManager from './utils/SoundManager.js';
 
 export default class Game {
     constructor() {
@@ -14,6 +15,7 @@ export default class Game {
 
         this.inputHandler = new InputHandler();
         this.renderer = new Renderer(this.ctx, this.width, this.height, this.gridSize, this.tileSize);
+        this.soundManager = new SoundManager();
 
         this.snake = new Snake(this.gridSize);
         this.food = new Food(this.gridSize);
@@ -24,8 +26,10 @@ export default class Game {
 
         this.state = 'MENU'; // MENU, PLAYING, PAUSED, GAMEOVER
         this.score = 0;
+        this.highScore = parseInt(localStorage.getItem('snakeHighScore')) || 0;
 
         this.bindEvents();
+        this.updateScore();
     }
 
     bindEvents() {
@@ -45,6 +49,11 @@ export default class Game {
     }
 
     startGame() {
+        const difficultySelect = document.getElementById('difficulty');
+        if (difficultySelect) {
+            this.tickInterval = parseInt(difficultySelect.value);
+        }
+
         this.reset();
         this.state = 'PLAYING';
         this.lastTime = performance.now();
@@ -61,10 +70,10 @@ export default class Game {
         this.updateScore();
 
         // Hide screens
-        document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('start-screen').classList.remove('active');
-        document.getElementById('game-over-screen').classList.add('hidden');
+        document.getElementById('start-screen').classList.add('hidden');
         document.getElementById('game-over-screen').classList.remove('active');
+        document.getElementById('game-over-screen').classList.add('hidden');
     }
 
     start() {
@@ -84,7 +93,7 @@ export default class Game {
             this.accumulatedTime -= this.tickInterval;
         }
 
-        this.render();
+        this.render(timestamp);
         requestAnimationFrame((ts) => this.loop(ts));
     }
 
@@ -100,6 +109,7 @@ export default class Game {
         if (this.snake.eat(this.food)) {
             this.score++;
             this.updateScore();
+            this.soundManager.playEat();
             this.food.spawn(this.snake.body);
         }
     }
@@ -112,6 +122,14 @@ export default class Game {
 
     gameOver() {
         this.state = 'GAMEOVER';
+        this.soundManager.playGameOver();
+
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('snakeHighScore', this.highScore);
+            this.updateScore();
+        }
+
         document.getElementById('game-over-screen').classList.remove('hidden');
         document.getElementById('game-over-screen').classList.add('active');
         document.getElementById('final-score').innerText = this.score;
@@ -119,12 +137,16 @@ export default class Game {
 
     updateScore() {
         document.getElementById('score').innerText = this.score;
+        const highScoreEl = document.getElementById('high-score');
+        if (highScoreEl) {
+            highScoreEl.innerText = this.highScore;
+        }
     }
 
-    render() {
+    render(timestamp) {
         this.renderer.clear();
         this.renderer.drawGrid();
-        this.renderer.drawFood(this.food);
+        this.renderer.drawFood(this.food, timestamp);
         this.renderer.drawSnake(this.snake);
     }
 }

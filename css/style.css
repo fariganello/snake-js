@@ -95,3 +95,22 @@ button {
 button:hover {
     background-color: #45a049;
 }
+
+.difficulty-selector {
+    margin-bottom: 2rem;
+    font-size: 1.2rem;
+}
+
+.difficulty-selector select {
+    padding: 5px;
+    font-size: 1rem;
+    background-color: #333;
+    color: white;
+    border: 1px solid #555;
+    border-radius: 3px;
+}
+
+#high-score-container {
+    color: #aaa;
+    font-size: 1rem;
+}
